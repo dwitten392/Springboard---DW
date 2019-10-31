@@ -83,6 +83,18 @@ Include in your output the name of the court, and the name of the member
 formatted as a single column. Ensure no duplicate data, and order by
 the member name. */
 
+select distinct
+concat(m.firstname, ' ',  m.surname) as member,
+f.name as facility
+
+from
+     Members m
+	 inner join Bookings b on b.memid = m.memid
+     inner join Facilities f on b.facid = f.facid
+where
+	 f.name = 'Tennis Court 2' or f.name = 'Tennis Court 1'
+order by member
+
 
 /* Q8: How can you produce a list of bookings on the day of 2012-09-14 which
 will cost the member (or guest) more than $30? Remember that guests have
@@ -91,8 +103,43 @@ the guest user's ID is always 0. Include in your output the name of the
 facility, the name of the member formatted as a single column, and the cost.
 Order by descending cost, and do not use any subqueries. */
 
+select f.name,
+	case when m.firstname = 'GUEST' 
+		then m.firstname
+		else concat(m.firstname, ' ', m.surname)
+	end as username,
+case 
+	when m.memid = 0 then b.slots * f.guestcost
+	else b.slots * f.membercost
+end as cost
+from Members m
+	inner join Bookings b on m.memid = b.memid
+	inner join Facilities f on b.facid = f.facid
+where 
+b.starttime >= '2012-09-14' and b.starttime < '2012-09-15' and (
+(m.memid = 0 and b.slots * f.guestcost >= 30 ) or 
+(m.memid != 0 and b.slots * f.membercost >= 30) )
+order by cost desc
+
 
 /* Q9: This time, produce the same result as in Q8, but using a subquery. */
+/* TIDY THIS UP */
+
+SELECT * 
+FROM (
+SELECT Facilities.name AS facility, CONCAT( Members.firstname,  ' ', Members.surname ) AS name, 
+	CASE WHEN Bookings.memid =0
+		THEN Facilities.guestcost * Bookings.slots
+		ELSE Facilities.membercost * Bookings.slots
+	END AS cost
+FROM Bookings
+INNER JOIN Facilities ON Bookings.facid = Facilities.facid
+INNER JOIN Members ON Bookings.memid = Members.memid
+where Bookings.starttime >= '2012-09-14' and Bookings.starttime < '2012-09-15'
+)sub
+WHERE sub.cost >30
+ORDER BY sub.cost DESC
+
 
 
 /* Q10: Produce a list of facilities with a total revenue less than 1000.
